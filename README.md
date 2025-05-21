@@ -1,50 +1,61 @@
 # 🤖 ChartBuilder-Agent: AI Agent for Divisional Chart Generation (D1–D164)
 
-**ChartBuilder-Agent** is a powerful AI-powered FastAPI microservice that generates **Vedic divisional charts (D-charts)** with absolute mathematical accuracy using the **Swiss Ephemeris (Lahiri Ayanamsha)**. Designed by **Harshit Pandey**, this agent computes D1 to D144 charts, suitable for both traditional astrologers and modern AI pipelines.
+**ChartBuilder-Agent** is a powerful AI-driven FastAPI microservice that computes **Vedic divisional charts (D-charts)** with high mathematical accuracy using the **Swiss Ephemeris (Lahiri Ayanamsha)**.  
+Created by **Harshit Pandey**, this tool supports all charts from **D1 to D144**, and is ideal for both classical astrologers and AI-based spiritual applications.
 
 ---
 
-## 🧠 What is This?
+## 🧐 What is This?
 
-This is a **self-contained AI agent** that accepts a birth date, time, and location and returns Vedic divisional charts such as D1 (Rāśi), D9 (Navāmsha), D60 (Shashtyāmsha), etc., with all planetary positions including **Rahu, Ketu, and Lagna**. It is engineered for **deterministic, verifiable, and replicable output**, and ideal for AI-based astrology apps, research, or spiritual dashboards.
+A fully encapsulated **astrological AI agent** that takes a user’s **birth date, time, and location**, and returns planetary placements in divisional charts like **D1 (Āśi), D9 (Navāmsha), D10 (Dashāmsha), D60 (Shashtyāmsha)** and more.  
+Built for deterministic, verifiable output — optimized for pipelines, dashboards, or embedded astrology engines.
 
 ---
 
 ## 📜 Features
 
-- 🧮 Computes accurate D-charts: D1 to D144 supported
-- 🌍 Based on **Lahiri Ayanamsha** (sidereal)
-- 🔭 Includes support for Lagna, Rahu, and Ketu
-- ⚙️ FastAPI backend with OpenAPI Swagger UI
-- 📦 Ready to deploy on Render / Railway / Docker
-- 📂 JSON output suitable for chaining or database storage
+- 🥮 Accurate generation of D-charts from **D1 to D144**
+- 🌍 Uses **Lahiri Ayanamsha** (sidereal)
+- 🔭 Computes **Lagna, Rahu, and Ketu** with planetary positions
+- ⚙️ Powered by **FastAPI** with OpenAPI Swagger interface
+- 📆 JSON output designed for easy chaining and storage
+- ☁️ Deployable on **Render, Railway, Docker**, or local environments
 
 ---
 
 ## 🗂 Supported Divisional Charts
 
-| Chart | Sanskrit Name                   | Purpose                 |
-|-------|----------------------------------|--------------------------|
-| D1    | Rāśi                            | Birth Chart (Body)      |
-| D2    | Horā                            | Wealth                  |
-| D3    | Drekkāṇa                        | Siblings                |
-| D4    | Chaturthāmsha                   | Fortune, Property       |
-| D5    | Pañchāmsha                      | Fame                    |
-| D6    | Shashthāmsha                    | Diseases, Enemies       |
-| D7    | Saptāmsha                       | Children                |
-| D9    | Navāmsha                        | Marriage, Dharma        |
-| D10   | Dashāmsha                       | Career                  |
-| D12   | Dvādashāmsha                    | Parents                 |
-| D16   | Shodashāmsha                    | Vehicles, Luxuries      |
-| D20   | Vimshāmsha                      | Spiritual Growth        |
-| D24   | Siddhāmsha                      | Education               |
-| D27   | Bhamshāmsha                     | Strength                |
-| D30   | Trimshāmsha                     | Evils, Misfortunes      |
-| D40   | Khavedāmsha                     | Maternal Karma          |
-| D45   | Akshavedāmsha                   | Paternal Karma          |
-| D60   | Shashtyāmsha                    | Past Life Karma         |
-| D108  | Ashtottarāmsha                  | Higher Self Tendencies  |
-| D144  | Dvichatvāriṃshāmsha             | Deep Karmic Seed        |
+| Chart | Sanskrit Name             | Purpose                    |
+|-------|----------------------------|-----------------------------|
+| D1    | Rāśi                      | Birth Chart (Physical)      |
+| D2    | Horā                      | Wealth                      |
+| D3    | Drekāṅa                  | Siblings                    |
+| D4    | Chaturthāmsha             | Fortune, Property           |
+| D5    | Pañchāmsha                | Fame                        |
+| D6    | Shashthāmsha              | Enemies, Diseases           |
+| D7    | Saptāmsha                 | Children                    |
+| D9    | Navāmsha                  | Marriage, Dharma            |
+| D10   | Dashāmsha                 | Career                      |
+| D12   | Dvādashāmsha              | Parents                     |
+| D16   | Shodashāmsha              | Luxuries, Vehicles          |
+| D20   | Vimshāmsha                | Spiritual Growth            |
+| D24   | Siddhāmsha                | Education                   |
+| D27   | Bhamshāmsha               | Strength, Vitality          |
+| D30   | Trimshāmsha               | Evils, Misfortunes          |
+| D40   | Khavedāmsha               | Maternal Karma              |
+| D45   | Akshavedāmsha             | Paternal Karma              |
+| D60   | Shashtyāmsha              | Past Life Karma             |
+| D108  | Ashtottarāmsha            | Higher Self Tendencies      |
+| D144  | Dvichatvāriṁshāmsha       | Deep Karmic Seed            |
+
+---
+
+## 🛠 Tech Stack
+
+- **FastAPI** – for REST API framework  
+- **Pydantic** – for request schema validation  
+- **Swiss Ephemeris (pyswisseph)** – for high-precision calculations  
+- **Uvicorn** – ASGI server for performance & scalability
 
 ---
 
@@ -57,38 +68,42 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 uvicorn main:app --reload
+```
+
+---
 
 ## ☁️ Deploy to Render (Free)
 
-1. Push this repo to your GitHub
+1. Push this repo to your **GitHub**
 2. Go to 👉 [https://render.com](https://render.com)
-3. Click **“New Web Service”**
+3. Click **New Web Service**
 4. Connect to your GitHub repo
 
-### 🔧 Settings:
+### 🔧 Render Settings
 
-| Setting         | Value                                             |
-|-----------------|---------------------------------------------------|
-| **Build Command** | `pip install -r requirements.txt`               |
-| **Start Command** | `uvicorn main:app --host=0.0.0.0 --port=$PORT`  |
-| **Runtime**       | Python 3.11+                                    |
-| **Instance Type** | Free Tier                                       |
+| Setting           | Value                                                 |
+|-------------------|-------------------------------------------------------|
+| **Build Command** | `pip install -r requirements.txt`                     |
+| **Start Command** | `uvicorn main:app --host=0.0.0.0 --port=$PORT`        |
+| **Runtime**       | Python 3.11+                                          |
+| **Instance Type** | Free Tier                                             |
 
 ---
-## 🚀 Hosted API Docs (Swagger UI)
 
-> Access the public Swagger interface at:
+## 🌐 Live API (Swagger UI)
+
+Access the live OpenAPI UI to test it directly from your browser:
 
 🔗 **[https://chartbuilder-agent.onrender.com/docs](https://chartbuilder-agent.onrender.com/docs)**
 
 ---
 
-### 🧪 How to Test the API
+### 🦪 How to Test the API
 
-1. Go to: [`https://chartbuilder-agent.onrender.com/docs`](https://chartbuilder-agent.onrender.com/docs)
-2. Click on **POST /build-charts**
+1. Open: [https://chartbuilder-agent.onrender.com/docs](https://chartbuilder-agent.onrender.com/docs)
+2. Click **POST /build-charts**
 3. Click **"Try it out"**
-4. Paste this example in the **request body**:
+4. Paste the following into the **Request Body**:
 
 ```json
 {
@@ -100,28 +115,32 @@ uvicorn main:app --reload
   "tz_offset": 5.5,
   "divisions": ["D1", "D9", "D60"]
 }
-## 🛠 Tech Stack
+```
 
-- **FastAPI** – for HTTP API framework  
-- **Pydantic** – for input validation  
-- **Swiss Ephemeris** (`pyswisseph`) – for planetary calculations  
-- **Uvicorn** – ASGI server for deployment  
+5. Click **Execute**
+6. The response will show the divisional chart results with Sanskrit chart names and planetary placements.
 
 ---
 
 ## 📚 References
 
-- 📌 [Swiss Ephemeris](https://www.astro.com/swisseph)
-- 📌 Lahiri Ayanamsha
-- 📌 Parashara Hora Shastra (BPHS)
-- 📌 Phaladeepika by Mantreswara
-- 📌 Devakeralam (Chandrakala Nadi)
-- 📌 Jataka Parijata
+- 📌 [Swiss Ephemeris](https://www.astro.com/swisseph)  
+- 📌 Lahiri Ayanamsha  
+- 📌 Parāśara Hora Śāstra  
+- 📌 Phaladeepika – Mantreswara  
+- 📌 Devakeralam (Chandrakala Nadi)  
+- 📌 Jataka Parijata  
 
 ---
 
 ## 👤 Author
 
 **Harshit Pandey**  
-Astro-Architect | Cloud & AI Strategist  
+Astro-Architect • Cloud & AI Strategist  
 🔗 [linkedin.com/in/pandeyharshit](https://linkedin.com/in/pandeyharshit)
+
+---
+
+## 📖 License
+
+**MIT License** — Use freely, improve, contribute, or fork. No attribution required.
