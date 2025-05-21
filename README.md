@@ -75,7 +75,31 @@ uvicorn main:app --reload
 | **Instance Type** | Free Tier                                       |
 
 ---
+## 🚀 Hosted API Docs (Swagger UI)
 
+> Access the public Swagger interface at:
+
+🔗 **[https://chartbuilder-agent.onrender.com/docs](https://chartbuilder-agent.onrender.com/docs)**
+
+---
+
+### 🧪 How to Test the API
+
+1. Go to: [`https://chartbuilder-agent.onrender.com/docs`](https://chartbuilder-agent.onrender.com/docs)
+2. Click on **POST /build-charts**
+3. Click **"Try it out"**
+4. Paste this example in the **request body**:
+
+```json
+{
+  "dob": "1990-01-01",
+  "tob": "12:00",
+  "location": "Ujjain, India",
+  "lat": 23.1765,
+  "lon": 75.7885,
+  "tz_offset": 5.5,
+  "divisions": ["D1", "D9", "D60"]
+}
 ## 🛠 Tech Stack
 
 - **FastAPI** – for HTTP API framework  
