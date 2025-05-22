@@ -1,23 +1,41 @@
-from datetime import datetime, timedelta
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict
-import uvicorn
 import swisseph as swe
-import os
+import datetime
 
-app = FastAPI(title="ChartBuilder-Agent (Accurate Sidereal Ephemeris)")
+app = FastAPI()
 
-class ChartRequest(BaseModel):
-    dob: str
-    tob: str
-    location: str
-    lat: float
-    lon: float
-    tz_offset: float
-    divisions: List[str]
+# Set Swiss Ephemeris path
+swe.set_ephe_path("/usr/share/ephe")
 
-DIVISIONAL_CHART_NAMES = {
+# Supported divisional charts and their divisions per sign
+DIVISION_RULES = {
+    "D1": 1,
+    "D2": 2,
+    "D3": 3,
+    "D4": 4,
+    "D5": 5,
+    "D6": 6,
+    "D7": 7,
+    "D8": 8,
+    "D9": 9,
+    "D10": 10,
+    "D12": 12,
+    "D16": 16,
+    "D20": 20,
+    "D24": 24,
+    "D27": 27,
+    "D30": 30,
+    "D40": 40,
+    "D45": 45,
+    "D60": 60,
+    "D81": 81,
+    "D108": 108,
+    "D144": 144
+}
+
+SANSKRIT_NAMES = {
     "D1": "Rāśi (Birth Chart)",
     "D2": "Horā (Wealth)",
     "D3": "Drekkāṇa (Siblings)",
@@ -28,7 +46,6 @@ DIVISIONAL_CHART_NAMES = {
     "D8": "Ashtāmsha (Longevity)",
     "D9": "Navāmsha (Marriage)",
     "D10": "Dashāmsha (Career)",
-    "D11": "Ekādashāmsha (Power/Community)",
     "D12": "Dvādashāmsha (Parents)",
     "D16": "Shodashāmsha (Vehicles/Luxuries)",
     "D20": "Vimshāmsha (Spiritual Progress)",
@@ -43,133 +60,67 @@ DIVISIONAL_CHART_NAMES = {
     "D144": "Dvichatvāriṃshāmsha (Deep Karmic Seed)"
 }
 
-VEDIC_PLANETS = {
-    'SUN': swe.SUN,
-    'MOON': swe.MOON,
-    'MERCURY': swe.MERCURY,
-    'VENUS': swe.VENUS,
-    'MARS': swe.MARS,
-    'JUPITER': swe.JUPITER,
-    'SATURN': swe.SATURN,
-    'RAHU': swe.MEAN_NODE
-}
-
-swe.set_ephe_path(os.getcwd())
-swe.set_sid_mode(swe.SIDM_LAHIRI)
-
-class ChartBuilder:
-    def __init__(self, dob: str, tob: str, lat: float, lon: float, tz_offset: float):
-        try:
-            local_dt = datetime.strptime(f"{dob} {tob}", "%Y-%m-%d %H:%M")
-            utc_dt = local_dt - timedelta(hours=tz_offset)
-            self.jd = swe.julday(utc_dt.year, utc_dt.month, utc_dt.day, utc_dt.hour + utc_dt.minute / 60)
-            self.lat = lat
-            self.lon = lon
-            swe.set_topo(lon, lat, 0)
-        except ValueError:
-            raise ValueError("Invalid date or time format. Use YYYY-MM-DD for date and HH:MM for time.")
-
-    def get_planet_positions(self) -> Dict[str, float]:
-        positions = {}
-        for name, code in VEDIC_PLANETS.items():
-            pos, _ = swe.calc(self.jd, code, flag=swe.FLG_SIDEREAL)
-            positions[name] = pos[0]
-
-        positions['KETU'] = (positions['RAHU'] + 180) % 360
-        houses, _ = swe.houses(self.jd, self.lat, self.lon)
-        positions['LAGNA'] = houses[0]
-
-        return positions
-
-    def calculate_navamsa(self, lon):
-        rasi = int(lon // 30)
-        deg = lon % 30
-        pada = int(deg // 3.3333)
-        return ((rasi * 9 + pada) % 12) + 1
-
-    def calculate_saptamsa(self, lon):
-        sign = int(lon // 30)
-        deg_in_sign = lon % 30
-        pada = int(deg_in_sign // (30 / 7))
-        if (sign + 1) % 2 == 1:
-            result_sign = (sign + pada) % 12
-        else:
-            result_sign = (sign + 6 - pada) % 12
-        return result_sign + 1
-
-    def calculate_division(self, lon: float, division: int, chart_name: str) -> int:
-        sign = int(lon // 30)
-        degree_in_sign = lon % 30
-
-        if chart_name == "D2":
-            return 5 if degree_in_sign < 15 else 4 if sign % 2 == 0 else 5
-
-        if chart_name == "D3":
-            return ((sign * 3 + int(degree_in_sign // 10)) % 12) + 1
-
-        if chart_name == "D7":
-            return self.calculate_saptamsa(lon)
-
-        if chart_name == "D9":
-            return self.calculate_navamsa(lon)
-
-        if chart_name == "D10":
-            part = int(degree_in_sign // (30 / 10))
-            return ((sign + part) % 12) + 1 if (sign + 1) % 2 == 1 else ((8 + part) % 12) + 1
-
-        if chart_name == "D30":
-            if degree_in_sign < 5:
-                return 2 if sign % 2 == 0 else 8
-            elif degree_in_sign < 10:
-                return 6 if sign % 2 == 0 else 12
-            elif degree_in_sign < 18:
-                return 10 if sign % 2 == 0 else 4
-            elif degree_in_sign < 25:
-                return 12 if sign % 2 == 0 else 6
-            else:
-                return 8 if sign % 2 == 0 else 2
-
-        if chart_name == "D60":
-            return int(lon // 0.5) % 12 + 1
-
-        part_size = 30 / division
-        part = int(degree_in_sign // part_size)
-        return ((sign * division + part) % 12) + 1
-
-    def generate(self, requested_divs: List[str]) -> Dict[str, Dict[str, Dict[str, int]]]:
-        positions = self.get_planet_positions()
-        charts = {}
-        for div in requested_divs:
-            if not div.startswith("D") or not div[1:].isdigit():
-                continue
-            division_number = int(div[1:])
-            if div not in DIVISIONAL_CHART_NAMES:
-                continue
-            chart = {planet: self.calculate_division(lon, division_number, div) for planet, lon in positions.items()}
-            charts[div] = {
-                "sanskrit_name": DIVISIONAL_CHART_NAMES[div],
-                "planets": chart
-            }
-        return charts
+class ChartInput(BaseModel):
+    dob: str
+    tob: str
+    location: str
+    lat: float
+    lon: float
+    tz_offset: float
+    divisions: List[str]
 
 @app.post("/build-charts")
-def build_div_charts(payload: ChartRequest):
+def build_div_charts(input: ChartInput):
     try:
-        builder = ChartBuilder(
-            dob=payload.dob,
-            tob=payload.tob,
-            lat=payload.lat,
-            lon=payload.lon,
-            tz_offset=payload.tz_offset
-        )
-        result = builder.generate(payload.divisions)
-        return {
-            "input": payload.dict(),
-            "charts": result,
-            "timestamp": datetime.utcnow().isoformat()
+        # Prepare datetime
+        dt = datetime.datetime.strptime(f"{input.dob} {input.tob}", "%Y-%m-%d %H:%M")
+        jd = swe.julday(dt.year, dt.month, dt.day, dt.hour + dt.minute / 60.0 - input.tz_offset)
+        charts = {}
+
+        planet_ids = {
+            "SUN": swe.SUN,
+            "MOON": swe.MOON,
+            "MERCURY": swe.MERCURY,
+            "VENUS": swe.VENUS,
+            "MARS": swe.MARS,
+            "JUPITER": swe.JUPITER,
+            "SATURN": swe.SATURN,
+            "RAHU": swe.MEAN_NODE,
+            "KETU": swe.MEAN_NODE  # will be computed as opposite to Rahu
         }
+
+        for div in input.divisions:
+            div_count = DIVISION_RULES.get(div)
+            if not div_count:
+                continue
+
+            planets = {}
+            for name, pid in planet_ids.items():
+                lon, _ = swe.calc_ut(jd, pid)
+                if name == "KETU":
+                    lon = (swe.calc_ut(jd, swe.MEAN_NODE)[0] + 180) % 360
+                sign = int((lon % 30) * div_count / 30)
+                final_sign = int(((int(lon / 30) * div_count) + sign) / div_count) + 1
+                final_sign = (final_sign - 1) % 12 + 1
+                planets[name] = final_sign
+
+            # Lagna (Ascendant)
+            asc = swe.houses(jd, input.lat, input.lon)[0][0]
+            asc_sign = int((asc % 30) * div_count / 30)
+            final_asc = int(((int(asc / 30) * div_count) + asc_sign) / div_count) + 1
+            final_asc = (final_asc - 1) % 12 + 1
+            planets["LAGNA"] = final_asc
+
+            charts[div] = {
+                "sanskrit_name": SANSKRIT_NAMES.get(div, ""),
+                "planets": planets
+            }
+
+        return {
+            "input": input.dict(),
+            "charts": charts,
+            "timestamp": datetime.datetime.utcnow().isoformat()
+        }
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
