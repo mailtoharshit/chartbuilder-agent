@@ -3,6 +3,9 @@ from pydantic import BaseModel
 from typing import List, Dict
 import swisseph as swe
 import datetime
+from geopy.geocoders import Nominatim
+from timezonefinder import TimezoneFinder
+import pytz
 
 app = FastAPI()
 
@@ -64,17 +67,28 @@ class ChartInput(BaseModel):
     dob: str
     tob: str
     location: str
-    lat: float
-    lon: float
-    tz_offset: float
     divisions: List[str]
+
+
+def get_location_details(place_name):
+    geolocator = Nominatim(user_agent="chartbuilder-agent")
+    location = geolocator.geocode(place_name)
+    if not location:
+        raise Exception("Location not found")
+    tf = TimezoneFinder()
+    timezone_str = tf.timezone_at(lng=location.longitude, lat=location.latitude)
+    timezone = pytz.timezone(timezone_str)
+    now = datetime.datetime.now(timezone)
+    offset = timezone.utcoffset(now).total_seconds() / 3600
+    return round(location.latitude, 4), round(location.longitude, 4), round(offset, 2)
+
 
 @app.post("/build-charts")
 def build_div_charts(input: ChartInput):
     try:
-        # Prepare datetime
+        lat, lon, tz_offset = get_location_details(input.location)
         dt = datetime.datetime.strptime(f"{input.dob} {input.tob}", "%Y-%m-%d %H:%M")
-        jd = swe.julday(dt.year, dt.month, dt.day, dt.hour + dt.minute / 60.0 - input.tz_offset)
+        jd = swe.julday(dt.year, dt.month, dt.day, dt.hour + dt.minute / 60.0 - tz_offset)
         charts = {}
 
         planet_ids = {
@@ -86,7 +100,7 @@ def build_div_charts(input: ChartInput):
             "JUPITER": swe.JUPITER,
             "SATURN": swe.SATURN,
             "RAHU": swe.MEAN_NODE,
-            "KETU": swe.MEAN_NODE  # will be computed as opposite to Rahu
+            "KETU": swe.MEAN_NODE
         }
 
         for div in input.divisions:
@@ -96,16 +110,15 @@ def build_div_charts(input: ChartInput):
 
             planets = {}
             for name, pid in planet_ids.items():
-                lon, _ = swe.calc_ut(jd, pid)
+                lon_val, _ = swe.calc_ut(jd, pid)
                 if name == "KETU":
-                    lon = (swe.calc_ut(jd, swe.MEAN_NODE)[0] + 180) % 360
-                sign = int((lon % 30) * div_count / 30)
-                final_sign = int(((int(lon / 30) * div_count) + sign) / div_count) + 1
+                    lon_val = (swe.calc_ut(jd, swe.MEAN_NODE)[0] + 180) % 360
+                sign = int((lon_val % 30) * div_count / 30)
+                final_sign = int(((int(lon_val / 30) * div_count) + sign) / div_count) + 1
                 final_sign = (final_sign - 1) % 12 + 1
                 planets[name] = final_sign
 
-            # Lagna (Ascendant)
-            asc = swe.houses(jd, input.lat, input.lon)[0][0]
+            asc = swe.houses(jd, lat, lon)[0][0]
             asc_sign = int((asc % 30) * div_count / 30)
             final_asc = int(((int(asc / 30) * div_count) + asc_sign) / div_count) + 1
             final_asc = (final_asc - 1) % 12 + 1
@@ -117,7 +130,15 @@ def build_div_charts(input: ChartInput):
             }
 
         return {
-            "input": input.dict(),
+            "input": {
+                "dob": input.dob,
+                "tob": input.tob,
+                "location": input.location,
+                "lat": lat,
+                "lon": lon,
+                "tz_offset": tz_offset,
+                "divisions": input.divisions
+            },
             "charts": charts,
             "timestamp": datetime.datetime.utcnow().isoformat()
         }
